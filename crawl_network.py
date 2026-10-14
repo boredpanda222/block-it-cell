@@ -3,6 +3,14 @@ import asyncio
 import json
 import os
 import sys
+
+# Ensure UTF-8 output on Windows consoles
+if sys.stdout.encoding != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 from twscrape import API, gather
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -49,7 +57,7 @@ async def expand_good_whitelist(api: API, limit_per_seed=60):
                 print(f"  [!] Could not find user @{seed_clean}")
                 continue
             
-            print(f"  ✓ User resolved: @{user.username} (ID: {user.id}, Following: {user.friends_count})")
+            print(f"  [+] User resolved: @{user.username} (ID: {user.id}, Following: {user.friendsCount})")
             print(f"  -> Pulling up to {limit_per_seed} followed accounts...")
             
             # Gentle delay to simulate natural browser reading
@@ -66,7 +74,7 @@ async def expand_good_whitelist(api: API, limit_per_seed=60):
                     added_this_seed += 1
             
             total_new += added_this_seed
-            print(f"  ✓ Successfully fetched {len(following_list)} accounts (+{added_this_seed} newly added to shield)")
+            print(f"  [+] Successfully fetched {len(following_list)} accounts (+{added_this_seed} newly added to shield)")
             
             # Safe pause before next seed
             if idx < len(good_seeds):
