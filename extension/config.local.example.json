@@ -1,0 +1,7 @@
+{
+  "githubOwner": "YOUR_GITHUB_USERNAME",
+  "githubRepo": "YOUR_REPO_NAME",
+  "githubBranch": "main",
+  "githubPath": "blocklist.json",
+  "githubToken": "github_pat_EXAMPLE_TOKEN_DO_NOT_COMMIT"
+}

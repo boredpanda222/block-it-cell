@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BotShield Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-area">
+        <div class="logo-icon">🛡️</div>
+        <div>
+          <div class="title-row">
+            <h1 class="title">BotShield</h1>
+            <span id="modeBadge" class="mode-badge badge-user">User Mode</span>
+          </div>
+          <p class="subtitle" id="syncStatusText">Connecting to GitHub...</p>
+        </div>
+      </div>
+      <label class="switch" title="Toggle BotShield">
+        <input type="checkbox" id="toggleEnabled" checked>
+        <span class="slider round"></span>
+      </label>
+    </header>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- Stats Banner -->
+    <div class="stat-card">
+      <div class="stat-info">
+        <span class="stat-label">Tweets Blocked</span>
+        <span class="stat-value" id="blockedCount">0</span>
+      </div>
+      <div class="stat-actions">
+        <button id="syncNowBtn" class="primary-btn btn-sm" title="Fetch latest blocklist from GitHub">⟳ Sync DB</button>
+        <button id="resetStatsBtn" class="secondary-btn btn-sm" title="Reset Counter">Reset</button>
+      </div>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="section">
+      <label class="section-label">Filter Action</label>
+      <div class="mode-selector">
+        <button type="button" class="mode-btn active" data-mode="collapse" id="modeCollapse">
+          <span class="mode-icon">⊟</span>
+          <span class="mode-title">Collapse</span>
+          <span class="mode-desc">Show reveal bar</span>
+        </button>
+        <button type="button" class="mode-btn" data-mode="hide" id="modeHide">
+          <span class="mode-icon">✕</span>
+          <span class="mode-title">Full Hide</span>
+          <span class="mode-desc">Vanish completely</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Add Account Form -->
+    <div class="section">
+      <div class="form-header">
+        <label class="section-label" for="newHandleInput">Add Blocked Handle</label>
+        <span id="commitNote" class="commit-note">Auto-commits to GitHub</span>
+      </div>
+      <form id="addHandleForm" class="add-form">
+        <div class="input-wrapper">
+          <span class="at-prefix">@</span>
+          <input type="text" id="newHandleInput" placeholder="username" autocomplete="off" spellcheck="false" required>
+        </div>
+        <button type="submit" id="submitHandleBtn" class="primary-btn">Add</button>
+      </form>
+    </div>
+
+    <!-- Blocked Accounts List -->
+    <div class="section flex-grow">
+      <div class="list-header">
+        <span class="section-label">Blocked Accounts (<span id="handlesCount">0</span>)</span>
+        <button id="exportImportBtn" class="link-btn">Batch Edit</button>
+      </div>
+
+      <!-- Batch Edit Modal Area (Hidden by default) -->
+      <div id="batchArea" class="batch-area hidden">
+        <textarea id="batchInput" placeholder="Enter handles separated by comma or new lines..."></textarea>
+        <div class="batch-actions">
+          <button id="saveBatchBtn" class="primary-btn btn-sm">Save List</button>
+          <button id="cancelBatchBtn" class="secondary-btn btn-sm">Cancel</button>
+        </div>
+      </div>
+
+      <div class="handles-list-container">
+        <ul id="handlesList" class="handles-list">
+          <!-- Dynamically populated -->
+        </ul>
+        <div id="emptyState" class="empty-state hidden">
+          No accounts in blocklist. Add some above or click "Sync DB"!
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <span>Changes apply live on active Twitter / X tabs</span>
+    </footer>
+  </div>
+
+  <script src="github-sync.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

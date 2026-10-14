@@ -1,0 +1,88 @@
+/* BotShield Styles for Twitter/X */
+
+/* When in full-hide mode */
+.botshield-hidden-completely {
+  display: none !important;
+}
+
+/* Collapsed banner replacement */
+.botshield-collapsed-banner {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  margin: 4px 0;
+  background: rgba(239, 68, 68, 0.08); /* subtle red/alert tint */
+  border: 1px dashed rgba(239, 68, 68, 0.35);
+  border-radius: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  color: #94a3b8;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.botshield-collapsed-banner:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+.botshield-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.botshield-banner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.botshield-banner-handle {
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.botshield-banner-toggle-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.botshield-banner-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+/* Collapsed state for the actual tweet inner content */
+.botshield-tweet-content-collapsed {
+  display: none !important;
+}
+
+/* Light theme support */
+[data-color-scheme="light"] .botshield-collapsed-banner,
+html[style*="color-scheme: light"] .botshield-collapsed-banner {
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #64748b;
+}
+
+[data-color-scheme="light"] .botshield-banner-handle,
+html[style*="color-scheme: light"] .botshield-banner-handle {
+  color: #0f172a;
+}
