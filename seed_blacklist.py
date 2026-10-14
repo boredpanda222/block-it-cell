@@ -99,6 +99,19 @@ async def expand_blacklist(api: API, custom_seeds=None, limit_per_seed=150, auto
                     
             print(f"  [+] Finished @{seed}: streamed {streamed} accounts (+{added_this_seed} candidates, skipped {whitelisted_skipped} whitelisted)")
             
+            # Incremental save after each seed
+            current_blocklist = current_blocklist.union(new_candidates)
+            merged = sorted(list(current_blocklist))
+            os.makedirs(DATA_DIR, exist_ok=True)
+            with open(LOCAL_BLOCKLIST_FILE, "w", encoding="utf-8") as f:
+                json.dump({
+                    "version": "1.0.0",
+                    "updatedAt": "2026-10-14",
+                    "description": "Curated list of coordinated bot accounts on X / Twitter.",
+                    "handles": merged
+                }, f, indent=2)
+            print(f"  [Saved] Updated blocklist: {len(merged)} total handles on disk.")
+
             if idx < len(seeds):
                 print("  [Cooldown] Waiting 3 seconds before next seed...")
                 await asyncio.sleep(3.0)
@@ -106,8 +119,6 @@ async def expand_blacklist(api: API, custom_seeds=None, limit_per_seed=150, auto
         except Exception as e:
             print(f"  [!] Error crawling @{seed}: {e}")
 
-    sorted_candidates = sorted(list(new_candidates))
-    
     sorted_candidates = sorted(list(new_candidates))
     
     # Directly update blocklist.local.json
@@ -141,7 +152,7 @@ async def main():
         
     # Check CLI flags
     auto_merge = "--merge" in sys.argv or "-m" in sys.argv
-    limit = 150
+    limit = -1  # Default to complete network
     for arg in sys.argv:
         if arg.startswith("--limit="):
             try:
