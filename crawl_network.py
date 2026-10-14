@@ -28,10 +28,10 @@ def load_whitelist():
         "handles": ["abhijeet_dipke", "sauravdassss", "narendramodi"]
     }
 
-async def expand_good_whitelist(api: API, limit_per_seed=60):
+async def expand_good_whitelist(api: API, limit_per_seed=-1):
     """
-    Crawls accounts followed by trusted journalists/voices.
-    Operates gently with delays between calls to keep the session 100% safe.
+    Crawls ALL accounts followed by trusted journalists/voices.
+    Uses streaming generator with incremental auto-saving.
     """
     wl = load_whitelist()
     good_seeds = wl.get("goodSeeds", ["abhijeet_dipke", "sauravdassss"])
@@ -39,10 +39,10 @@ async def expand_good_whitelist(api: API, limit_per_seed=60):
     protected_prominent = set(h.lower().strip() for h in wl.get("protectedProminent", []))
     
     print("\n" + "=" * 60)
-    print("  BOTSHIELD: STAGE 1 - EXPANDING TRUSTED WHITELIST")
+    print("  BOTSHIELD: STAGE 1 - EXPANDING TRUSTED WHITELIST (FULL)")
     print("=" * 60)
     print(f"Good Seeds to Crawl: {good_seeds}")
-    print(f"Per-seed limit: {limit_per_seed} (Safe, low-velocity rate)")
+    print(f"Limit: {'ALL (Complete list)' if limit_per_seed == -1 else limit_per_seed}")
     print("-" * 60)
     
     total_new = 0
@@ -57,25 +57,45 @@ async def expand_good_whitelist(api: API, limit_per_seed=60):
                 print(f"  [!] Could not find user @{seed_clean}")
                 continue
             
-            print(f"  [+] User resolved: @{user.username} (ID: {user.id}, Following: {user.friendsCount})")
-            print(f"  -> Pulling up to {limit_per_seed} followed accounts...")
+            print(f"  [+] User resolved: @{user.username} (ID: {user.id}, Total Following: {user.friendsCount})")
+            print(f"  -> Streaming complete followed network...")
             
-            # Gentle delay to simulate natural browser reading
-            await asyncio.sleep(2.0)
-            
-            # Fetch who they follow
-            following_list = await gather(api.following(user.id, limit=limit_per_seed))
+            await asyncio.sleep(1.5)
             
             added_this_seed = 0
-            for u in following_list:
+            streamed_total = 0
+            
+            async for u in api.following(user.id, limit=limit_per_seed):
+                streamed_total += 1
                 handle = u.username.lower().strip()
                 if handle not in existing_handles:
                     existing_handles.add(handle)
                     added_this_seed += 1
+                
+                if streamed_total % 100 == 0:
+                    print(f"     -> Processed {streamed_total}/{user.friendsCount} accounts (+{added_this_seed} new to shield)...")
             
             total_new += added_this_seed
-            print(f"  [+] Successfully fetched {len(following_list)} accounts (+{added_this_seed} newly added to shield)")
+            print(f"  [+] Finished @{seed_clean}: fetched {streamed_total} accounts (+{added_this_seed} new to shield)")
             
+            # Incremental save after each seed
+            sorted_handles = sorted(list(existing_handles))
+            payload = {
+                "version": "1.0.0",
+                "goodSeeds": good_seeds,
+                "protectedProminent": list(protected_prominent),
+                "totalProtectedCount": len(sorted_handles),
+                "handles": sorted_handles
+            }
+            with open(EXPANDED_WHITELIST_FILE, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2)
+            with open(EXT_WHITELIST_FILE, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2)
+            with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2)
+                
+            print(f"  [Saved] Updated whitelist shield: {len(sorted_handles)} total handles protected so far.")
+
             # Safe pause before next seed
             if idx < len(good_seeds):
                 print("  [Cooldown] Waiting 3 seconds before next seed...")
@@ -134,8 +154,8 @@ async def main():
         
     print(f"[Ready] Found {len(accounts)} session account in twscrape.")
     
-    # Run only Stage 1: Whitelist Builder
-    await expand_good_whitelist(api, limit_per_seed=60)
+    # Run only Stage 1: Whitelist Builder (Full following lists)
+    await expand_good_whitelist(api, limit_per_seed=-1)
 
 if __name__ == "__main__":
     asyncio.run(main())
