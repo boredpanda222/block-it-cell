@@ -108,37 +108,29 @@ async def expand_blacklist(api: API, custom_seeds=None, limit_per_seed=150, auto
 
     sorted_candidates = sorted(list(new_candidates))
     
-    # Save candidates file for inspection
+    sorted_candidates = sorted(list(new_candidates))
+    
+    # Directly update blocklist.local.json
     os.makedirs(DATA_DIR, exist_ok=True)
-    payload = {
-        "count": len(sorted_candidates),
-        "sourceTrollSeeds": seeds,
-        "whitelistedProtectedMatches": whitelisted_skipped,
-        "candidates": sorted_candidates
+    merged = sorted(list(current_blocklist.union(new_candidates)))
+    blocklist_payload = {
+        "version": "1.0.0",
+        "updatedAt": "2026-10-14",
+        "description": "Curated list of coordinated bot accounts on X / Twitter.",
+        "handles": merged
     }
-    with open(CANDIDATES_FILE, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2)
-        
-    print("\n" + "=" * 60)
-    print("  SEED BLACKLIST CRAWL COMPLETE!")
-    print(f"  New Candidates Found: {len(sorted_candidates)}")
-    print(f"  Whitelisted Accounts Protected: {whitelisted_skipped}")
-    print(f"  Candidates saved to: {CANDIDATES_FILE}")
-    print("=" * 60)
+    with open(LOCAL_BLOCKLIST_FILE, "w", encoding="utf-8") as f:
+        json.dump(blocklist_payload, f, indent=2)
 
-    if auto_merge and sorted_candidates:
-        print("\n[Auto-Merge] Merging candidates into data/blocklist.local.json...")
-        merged = sorted(list(current_blocklist.union(new_candidates)))
-        blocklist_payload = {
-            "version": "1.0.0",
-            "updatedAt": "2026-10-14",
-            "description": "Curated list of coordinated bot accounts on X / Twitter.",
-            "handles": merged
-        }
-        with open(LOCAL_BLOCKLIST_FILE, "w", encoding="utf-8") as f:
-            json.dump(blocklist_payload, f, indent=2)
-        print(f"✓ Updated data/blocklist.local.json! Total handles: {len(merged)}")
-        print("Run 'node sync-data.js --push' when ready to publish to cloud.")
+    print("\n" + "=" * 60)
+    print("  SEED BLACKLIST INGESTION COMPLETE!")
+    print(f"  New Accounts Ingested: {len(sorted_candidates)}")
+    print(f"  Whitelisted Accounts Automatically Protected: {whitelisted_skipped}")
+    print(f"  Total Blocklist Size: {len(merged)} accounts")
+    print(f"✓ Saved directly to: {LOCAL_BLOCKLIST_FILE}")
+    print("=" * 60)
+    print("Tip: Run 'python clean_blocklist.py' anytime to sanitize before publishing.")
+    print("     Run 'node sync-data.js --push' to publish to cloud.\n")
 
 async def main():
     api = API()
