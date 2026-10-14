@@ -8,16 +8,12 @@ const SYNC_INTERVAL_MINUTES = 360; // Sync every 6 hours
 async function syncFromGitHub() {
   try {
     const remoteHandles = await GitHubSync.fetchRemoteBlocklist();
-    if (Array.isArray(remoteHandles) && remoteHandles.length > 0) {
-      chrome.storage.local.get(['blockedHandles'], (res) => {
-        const existing = res.blockedHandles || [];
-        const merged = Array.from(new Set([...existing, ...remoteHandles])).sort();
-        chrome.storage.local.set({
-          blockedHandles: merged,
-          lastSyncTime: new Date().toISOString()
-        });
-        console.log(`[BotShield] Auto-synced ${remoteHandles.length} handles from GitHub.`);
+    if (Array.isArray(remoteHandles)) {
+      chrome.storage.local.set({
+        blockedHandles: remoteHandles,
+        lastSyncTime: new Date().toISOString()
       });
+      console.log(`[BotShield] Mirrored ${remoteHandles.length} handles from GitHub cloud.`);
     }
   } catch (err) {
     console.warn('[BotShield] Background sync error:', err.message);
