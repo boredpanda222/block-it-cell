@@ -1,7 +1,7 @@
 {
   "githubOwner": "boredpanda222",
   "githubRepo": "block-it-cell",
-  "githubBranch": "main",
+  "githubBranch": "data",
   "githubPath": "blocklist.json",
-  "publicRawUrl": "https://raw.githubusercontent.com/boredpanda222/block-it-cell/main/blocklist.json"
+  "publicRawUrl": "https://raw.githubusercontent.com/boredpanda222/block-it-cell/data/blocklist.json"
 }

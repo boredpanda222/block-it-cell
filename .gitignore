@@ -3,6 +3,9 @@ extension/config.local.json
 *.local.json
 .env
 
+# Data is stored on dedicated 'data' branch
+blocklist.json
+
 # Dependencies & temporary files
 node_modules/
 dist/
