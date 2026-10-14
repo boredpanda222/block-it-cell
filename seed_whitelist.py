@@ -1,4 +1,4 @@
-# crawl_network.py - Stage 1: Whitelist Builder & Shield Generator
+# seed_whitelist.py - Expands and maintains the trusted whitelist
 import asyncio
 import json
 import os
@@ -11,7 +11,7 @@ if sys.stdout.encoding != 'utf-8':
     except Exception:
         pass
 
-from twscrape import API, gather
+from twscrape import API
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 WHITELIST_FILE = os.path.join(os.path.dirname(__file__), "whitelist.json")
@@ -28,21 +28,17 @@ def load_whitelist():
         "handles": ["abhijeet_dipke", "sauravdassss", "narendramodi"]
     }
 
-async def expand_good_whitelist(api: API, limit_per_seed=-1):
-    """
-    Crawls ALL accounts followed by trusted journalists/voices.
-    Uses streaming generator with incremental auto-saving.
-    """
+async def expand_whitelist(api: API, limit_per_seed=-1):
     wl = load_whitelist()
     good_seeds = wl.get("goodSeeds", ["abhijeet_dipke", "sauravdassss"])
     existing_handles = set(h.lower().strip() for h in wl.get("handles", []))
     protected_prominent = set(h.lower().strip() for h in wl.get("protectedProminent", []))
     
     print("\n" + "=" * 60)
-    print("  BOTSHIELD: STAGE 1 - EXPANDING TRUSTED WHITELIST (FULL)")
+    print("  SEED WHITELIST: EXPANDING TRUSTED SHIELD NETWORK")
     print("=" * 60)
-    print(f"Good Seeds to Crawl: {good_seeds}")
-    print(f"Limit: {'ALL (Complete list)' if limit_per_seed == -1 else limit_per_seed}")
+    print(f"Good Seeds: {good_seeds}")
+    print(f"Limit per seed: {'ALL' if limit_per_seed == -1 else limit_per_seed}")
     print("-" * 60)
     
     total_new = 0
@@ -58,7 +54,7 @@ async def expand_good_whitelist(api: API, limit_per_seed=-1):
                 continue
             
             print(f"  [+] User resolved: @{user.username} (ID: {user.id}, Total Following: {user.friendsCount})")
-            print(f"  -> Streaming complete followed network...")
+            print(f"  -> Streaming followed accounts...")
             
             await asyncio.sleep(1.5)
             
@@ -76,7 +72,7 @@ async def expand_good_whitelist(api: API, limit_per_seed=-1):
                     print(f"     -> Processed {streamed_total}/{user.friendsCount} accounts (+{added_this_seed} new to shield)...")
             
             total_new += added_this_seed
-            print(f"  [+] Finished @{seed_clean}: fetched {streamed_total} accounts (+{added_this_seed} new to shield)")
+            print(f"  [+] Finished @{seed_clean}: streamed {streamed_total} accounts (+{added_this_seed} new to shield)")
             
             # Incremental save after each seed
             sorted_handles = sorted(list(existing_handles))
@@ -87,6 +83,7 @@ async def expand_good_whitelist(api: API, limit_per_seed=-1):
                 "totalProtectedCount": len(sorted_handles),
                 "handles": sorted_handles
             }
+            os.makedirs(DATA_DIR, exist_ok=True)
             with open(EXPANDED_WHITELIST_FILE, "w", encoding="utf-8") as f:
                 json.dump(payload, f, indent=2)
             with open(EXT_WHITELIST_FILE, "w", encoding="utf-8") as f:
@@ -94,9 +91,8 @@ async def expand_good_whitelist(api: API, limit_per_seed=-1):
             with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
                 json.dump(payload, f, indent=2)
                 
-            print(f"  [Saved] Updated whitelist shield: {len(sorted_handles)} total handles protected so far.")
+            print(f"  [Saved] Updated whitelist: {len(sorted_handles)} total protected handles.")
 
-            # Safe pause before next seed
             if idx < len(good_seeds):
                 print("  [Cooldown] Waiting 3 seconds before next seed...")
                 await asyncio.sleep(3.0)
@@ -104,58 +100,19 @@ async def expand_good_whitelist(api: API, limit_per_seed=-1):
         except Exception as e:
             print(f"  [!] Error processing @{seed_clean}: {e}")
 
-    # Build final whitelist payload
-    sorted_handles = sorted(list(existing_handles))
-    updated_wl = {
-        "version": "1.0.0",
-        "updatedAt": "2026-10-14",
-        "description": "Protected authentic voices, journalists, and opposition handles that can NEVER be blocked.",
-        "goodSeeds": good_seeds,
-        "protectedProminent": list(protected_prominent),
-        "totalProtectedCount": len(sorted_handles),
-        "handles": sorted_handles
-    }
-    
-    # Save to local data folder (gitignored)
-    os.makedirs(DATA_DIR, exist_ok=True)
-    with open(EXPANDED_WHITELIST_FILE, "w", encoding="utf-8") as f:
-        json.dump(updated_wl, f, indent=2)
-        
-    # Update active extension whitelist so browser extension protects them immediately
-    with open(EXT_WHITELIST_FILE, "w", encoding="utf-8") as f:
-        json.dump(updated_wl, f, indent=2)
-
-    with open(WHITELIST_FILE, "w", encoding="utf-8") as f:
-        json.dump(updated_wl, f, indent=2)
-
     print("\n" + "=" * 60)
-    print("  WHITELIST EXPANSION COMPLETE!")
-    print(f"  Total Protected Accounts: {len(sorted_handles)} (+{total_new} new)")
-    print(f"  Saved to: {EXPANDED_WHITELIST_FILE}")
-    print(f"  Updated extension guardrail: {EXT_WHITELIST_FILE}")
+    print("  SEED WHITELIST COMPLETE!")
+    print(f"  Total Protected Accounts: {len(existing_handles)} (+{total_new} new)")
     print("=" * 60 + "\n")
-    return sorted_handles
 
 async def main():
     api = API()
-    
-    # Check if accounts are logged in
     accounts = await api.pool.accounts_info()
     if not accounts:
-        print("\n=======================================================")
-        print("  twscrape needs your browser cookie session to run.")
-        print("=======================================================")
-        print("1. In your browser (logged into X), press F12 -> Application -> Cookies -> https://x.com")
-        print("2. Copy 'auth_token' and 'ct0'")
-        print("3. Run in terminal:")
-        print("   twscrape add_cookie myaccount \"auth_token=...; ct0=...\"")
-        print("=======================================================\n")
+        print("\n[!] No active Twitter session accounts found. Run: twscrape add_cookie ...\n")
         sys.exit(1)
         
-    print(f"[Ready] Found {len(accounts)} session account in twscrape.")
-    
-    # Run only Stage 1: Whitelist Builder (Full following lists)
-    await expand_good_whitelist(api, limit_per_seed=-1)
+    await expand_whitelist(api, limit_per_seed=-1)
 
 if __name__ == "__main__":
     asyncio.run(main())
