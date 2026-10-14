@@ -171,6 +171,68 @@ const GitHubSync = {
     }
 
     return { added: true, handles: sortedHandles };
+  },
+
+  // Remove handle directly from GitHub repository (Maintainer mode only)
+  async removeHandleFromGitHub(handleToRemove) {
+    const config = await this.getConfig();
+    if (!config || !config.isMaintainer || !config.token) {
+      throw new Error('Maintainer mode disabled.');
+    }
+
+    const cleanHandle = String(handleToRemove).trim().replace(/^@/, '').toLowerCase();
+    if (!cleanHandle) throw new Error('Invalid handle provided.');
+
+    const url = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.path}?ref=${config.branch}`;
+    const getRes = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${config.token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (!getRes.ok) throw new Error('Failed to query repository before deletion.');
+
+    const fileData = await getRes.json();
+    const rawStr = decodeURIComponent(escape(atob(fileData.content.replace(/\s/g, ''))));
+    const currentData = JSON.parse(rawStr);
+
+    const existingHandles = (Array.isArray(currentData) ? currentData : (currentData.handles || []))
+      .map(h => String(h).trim().replace(/^@/, '').toLowerCase());
+
+    const filtered = existingHandles.filter(h => h !== cleanHandle).sort();
+
+    const updatedPayload = {
+      version: currentData.version || '1.0.0',
+      updatedAt: new Date().toISOString(),
+      description: currentData.description || 'Curated list of coordinated bot accounts on X / Twitter.',
+      handles: filtered
+    };
+
+    const formattedJson = JSON.stringify(updatedPayload, null, 2);
+    const base64Content = btoa(unescape(encodeURIComponent(formattedJson)));
+
+    const putRes = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${config.token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      body: JSON.stringify({
+        message: `chore(botshield): remove @${cleanHandle} from blocklist`,
+        content: base64Content,
+        sha: fileData.sha,
+        branch: config.branch
+      })
+    });
+
+    if (!putRes.ok) {
+      const err = await putRes.json().catch(() => ({}));
+      throw new Error(`Failed to commit removal to GitHub: ${err.message || putRes.statusText}`);
+    }
+
+    return { removed: true, handles: filtered };
   }
 };
 

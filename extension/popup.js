@@ -125,16 +125,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Sync with Remote GitHub Blocklist
+  // Sync with Remote GitHub Blocklist (Exact 1:1 Cloud Mirror)
   async function performSync() {
     try {
-      showToast('Fetching latest blocklist from GitHub...', 'loading', 0);
+      showToast('Syncing with GitHub cloud...', 'loading', 0);
       syncNowBtn.disabled = true;
       syncNowBtn.textContent = 'Syncing...';
 
       const remoteHandles = await GitHubSync.fetchRemoteBlocklist();
-      const mergedSet = new Set([...state.blockedHandles, ...remoteHandles]);
-      state.blockedHandles = Array.from(mergedSet).sort();
+      state.blockedHandles = remoteHandles;
 
       chrome.storage.local.set({ blockedHandles: state.blockedHandles }, () => {
         renderList();
@@ -187,10 +186,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // Save locally first for instant responsiveness
-    state.blockedHandles.unshift(handle);
-    chrome.storage.local.set({ blockedHandles: state.blockedHandles });
-    renderList();
     const enteredHandle = handle;
     newHandleInput.value = '';
 
@@ -200,30 +195,45 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast(`Committing @${enteredHandle} to GitHub...`, 'loading', 0);
       try {
         const result = await GitHubSync.pushHandleToGitHub(enteredHandle);
-        if (result.added) {
-          showToast(`Committed @${enteredHandle} to GitHub!`, 'success');
-        } else {
-          showToast(result.message || `Already on GitHub`, 'success');
-        }
+        state.blockedHandles = result.handles;
+        chrome.storage.local.set({ blockedHandles: state.blockedHandles });
+        renderList();
+        showToast(`Committed @${enteredHandle} to GitHub!`, 'success');
       } catch (err) {
         console.error('GitHub push error:', err);
-        showToast(`Saved locally, but GitHub error: ${err.message}`, 'error', 4000);
+        showToast(`GitHub error: ${err.message}`, 'error', 4000);
       } finally {
         submitHandleBtn.disabled = false;
       }
     } else {
-      showToast(`Added @${enteredHandle} to local blocklist`, 'success');
+      state.blockedHandles.unshift(enteredHandle);
+      chrome.storage.local.set({ blockedHandles: state.blockedHandles });
+      renderList();
+      showToast(`Added @${enteredHandle} locally`, 'success');
     }
   });
 
   // Delete Individual Handle
-  handlesList.addEventListener('click', (e) => {
+  handlesList.addEventListener('click', async (e) => {
     if (e.target.classList.contains('delete-btn')) {
       const handleToDelete = e.target.getAttribute('data-handle');
-      state.blockedHandles = state.blockedHandles.filter(h => h !== handleToDelete);
-      chrome.storage.local.set({ blockedHandles: state.blockedHandles }, () => {
+      
+      if (state.config && state.config.isMaintainer) {
+        showToast(`Removing @${handleToDelete} from GitHub...`, 'loading', 0);
+        try {
+          const res = await GitHubSync.removeHandleFromGitHub(handleToDelete);
+          state.blockedHandles = res.handles;
+          chrome.storage.local.set({ blockedHandles: state.blockedHandles });
+          renderList();
+          showToast(`Removed @${handleToDelete} from GitHub!`, 'success');
+        } catch (err) {
+          showToast(`Error deleting from GitHub: ${err.message}`, 'error');
+        }
+      } else {
+        state.blockedHandles = state.blockedHandles.filter(h => h !== handleToDelete);
+        chrome.storage.local.set({ blockedHandles: state.blockedHandles });
         renderList();
-      });
+      }
     }
   });
 
