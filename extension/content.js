@@ -152,10 +152,8 @@
       if (Array.isArray(res.blockedHandles)) {
         config.blockedHandles = new Set(res.blockedHandles.map(h => cleanHandle(h)).filter(Boolean));
       } else {
-        // Default initial demonstration accounts (can be removed/edited in popup)
-        const defaults = ['bot_example_1', 'spam_sample_bot'];
-        config.blockedHandles = new Set(defaults);
-        chrome.storage.local.set({ blockedHandles: defaults });
+        config.blockedHandles = new Set();
+        chrome.storage.local.set({ blockedHandles: [] });
       }
 
       if (typeof res.sessionBlockedCount === 'number') {

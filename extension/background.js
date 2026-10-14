@@ -41,3 +41,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     syncFromGitHub();
   }
 });
+
+// Also sync on browser launch
+chrome.runtime.onStartup.addListener(() => {
+  syncFromGitHub();
+});
