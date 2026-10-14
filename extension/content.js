@@ -53,6 +53,15 @@
 
   // Apply blocking (hide or collapse) to a tweet element
   function applyBlockAction(tweetElem, authorHandle) {
+    // Hard Whitelist Guardrail: NEVER block whitelisted handles under any circumstances
+    if (config.whitelistHandles && config.whitelistHandles.has(authorHandle)) {
+      const existingBanner = tweetElem.querySelector('.botshield-collapsed-banner');
+      const cellInner = tweetElem.closest('div[data-testid="cellInnerDiv"]') || tweetElem;
+      cellInner.classList.remove('botshield-hidden-completely');
+      if (existingBanner) existingBanner.remove();
+      return;
+    }
+
     const isBlocked = config.enabled && config.blockedHandles.has(authorHandle);
     const existingBanner = tweetElem.querySelector('.botshield-collapsed-banner');
     const cellInner = tweetElem.closest('div[data-testid="cellInnerDiv"]') || tweetElem;
@@ -145,7 +154,20 @@
   }
 
   // Load configuration and initialize
-  function init() {
+  async function init() {
+    config.whitelistHandles = new Set();
+    try {
+      const wUrl = chrome.runtime.getURL('whitelist.json');
+      const wRes = await fetch(wUrl);
+      if (wRes.ok) {
+        const wData = await wRes.json();
+        const wList = (Array.isArray(wData) ? wData : wData.handles) || [];
+        config.whitelistHandles = new Set(wList.map(h => cleanHandle(h)).filter(Boolean));
+      }
+    } catch (e) {
+      console.warn('BotShield: whitelist load warning', e);
+    }
+
     chrome.storage.local.get(['enabled', 'mode', 'blockedHandles', 'sessionBlockedCount'], (res) => {
       if (typeof res.enabled === 'boolean') config.enabled = res.enabled;
       config.mode = res.mode || 'hide';

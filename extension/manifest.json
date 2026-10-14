@@ -17,7 +17,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["config.local.json", "config.json"],
+      "resources": ["config.local.json", "config.json", "whitelist.json"],
       "matches": ["<all_urls>"]
     }
   ],
