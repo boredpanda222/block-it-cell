@@ -5,6 +5,7 @@ extension/config.local.json
 
 # Data is stored on dedicated 'data' branch
 blocklist.json
+data/
 
 # Dependencies & temporary files
 node_modules/
