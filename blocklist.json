@@ -1,9 +1,10 @@
 {
   "version": "1.0.0",
-  "updatedAt": "2026-10-14T12:00:00Z",
+  "updatedAt": "2026-10-14T13:19:32.026Z",
   "description": "Curated list of coordinated bot accounts and propaganda spreaders on X (Twitter).",
   "handles": [
     "example_bot_1",
-    "example_bot_2"
+    "example_bot_2",
+    "test_bot_demo"
   ]
 }
