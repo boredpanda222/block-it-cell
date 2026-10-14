@@ -2,7 +2,7 @@
 (() => {
   let config = {
     enabled: true,
-    mode: 'collapse', // 'collapse' | 'hide'
+    mode: 'hide', // Completely silent vanish
     blockedHandles: new Set()
   };
 
@@ -148,7 +148,7 @@
   function init() {
     chrome.storage.local.get(['enabled', 'mode', 'blockedHandles', 'sessionBlockedCount'], (res) => {
       if (typeof res.enabled === 'boolean') config.enabled = res.enabled;
-      if (res.mode) config.mode = res.mode;
+      config.mode = res.mode || 'hide';
       if (Array.isArray(res.blockedHandles)) {
         config.blockedHandles = new Set(res.blockedHandles.map(h => cleanHandle(h)).filter(Boolean));
       } else {

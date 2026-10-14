@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let state = {
     enabled: true,
-    mode: 'collapse',
+    mode: 'hide',
     blockedHandles: [],
     sessionBlockedCount: 0,
     config: null
